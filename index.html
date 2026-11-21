@@ -152,11 +152,86 @@
       justify-content: center;
     }
 
-    #remoteVideo {
+    /* Responsive Group Video Grid */
+    .video-grid {
+      width: 100%;
+      height: 100%;
+      display: none;
+      gap: 10px;
+      padding: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-auto-rows: 1fr;
+    }
+
+    .video-grid.active {
+      display: grid;
+    }
+
+    .video-grid.count-1 {
+      grid-template-columns: 1fr;
+    }
+
+    .video-grid.count-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .video-tile {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 160px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: #131b2e;
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .video-tile video {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: none;
+    }
+
+    .video-tile.has-video video {
+      display: block;
+    }
+
+    .tile-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      font-size: 1.4rem;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+      text-transform: uppercase;
+    }
+
+    .video-tile.has-video .tile-avatar {
+      display: none;
+    }
+
+    .tile-label {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: white;
+      background: rgba(0, 0, 0, 0.65);
+      padding: 4px 10px;
+      border-radius: 999px;
+      backdrop-filter: blur(6px);
+      max-width: calc(100% - 20px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .video-placeholder {
@@ -594,6 +669,14 @@
       border-bottom-left-radius: 4px;
     }
 
+    .msg-sender {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #a5b4fc;
+      margin-bottom: 3px;
+    }
+
     .msg.system {
       align-self: center;
       max-width: 95%;
@@ -709,6 +792,17 @@
         border-left: none;
         border-top: 1px solid var(--border-subtle);
       }
+      .video-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 6px;
+        padding: 6px;
+      }
+      .video-grid.count-2 {
+        grid-template-columns: 1fr 1fr;
+      }
+      .video-tile {
+        min-height: 100px;
+      }
       .local-pip {
         width: 110px;
         bottom: 72px;
@@ -748,7 +842,7 @@
     <!-- Left: Video Call Stage -->
     <section class="video-stage">
       <div class="remote-video-wrapper">
-        <video id="remoteVideo" autoplay playsinline webkit-playsinline></video>
+        <div class="video-grid" id="videoGrid"></div>
 
         <div class="video-placeholder" id="remotePlaceholder">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -757,8 +851,8 @@
             <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
           </svg>
-          <h2>1-Click P2P Video & Chat</h2>
-          <p>Create a call link and share it with your friend. Once they open it, video, audio, and text flow directly peer-to-peer.</p>
+          <h2>Group P2P Video & Chat</h2>
+          <p>Create a call link and share it with multiple friends. Everyone connects directly peer-to-peer in a live mesh (best for 2–6 people).</p>
         </div>
       </div>
 
@@ -805,31 +899,20 @@
         </button>
       </div>
 
-      <!-- TAB 1: Manual WebRTC Signaling -->
-      <div class="tab-panel active" id="panelConnect">
-        <div class="connect-scroll">
-          <!-- Role Switcher -->
-          <div class="role-switcher">
-            <button class="role-btn active" id="roleHostBtn">Start a Call (Host)</button>
-            <button class="role-btn" id="roleGuestBtn">Join a Call (Guest)</button>
-          </div>
-
-          <!-- Media Preference -->
-          <div class="media-option">
-            <label for="chkEnableMedia">
-              <input type="checkbox" id="chkEnableMedia" checked />
-              Enable Camera & Microphone
-            </label>
-            <span style="font-size: 0.75rem; color: var(--text-muted);">Uncheck for text-only</span>
-          </div>
-      <!-- TAB 1: Link-Based P2P Connection -->
+      <!-- TAB 1: Link-Based Group P2P Connection -->
       <div class="tab-panel active" id="panelConnect">
         <div class="connect-scroll">
           <!-- Incoming Invite Banner (shown automatically when opened via ?room= link) -->
           <div class="invite-banner hidden" id="inviteBanner">
-            <div class="invite-banner-title">You've been invited to a call!</div>
+            <div class="invite-banner-title">You've been invited to a group call!</div>
             <p class="step-desc" id="inviteBannerText">Tap below to join the room immediately.</p>
             <button class="btn btn-primary" id="btnJoinInvited">Join Call Now</button>
+          </div>
+
+          <!-- Display Name -->
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label for="displayNameInput" style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;">Your Name</label>
+            <input type="text" id="displayNameInput" class="room-input" placeholder="Enter your name (optional)..." maxlength="24" />
           </div>
 
           <!-- Media Preference -->
@@ -845,9 +928,9 @@
           <div class="step-card" id="createCard">
             <div class="step-header">
               <span class="step-num">1</span>
-              <span>Start a New Call</span>
+              <span>Start a Group Call</span>
             </div>
-            <p class="step-desc">Generate a private link and send it to your friend. They can join with a single tap.</p>
+            <p class="step-desc">Generate a room link and share it with multiple friends. Anyone with the link can join the same call.</p>
             <button class="btn btn-primary" id="btnCreateRoom">Create Call Link</button>
 
             <div id="shareSection" class="hidden" style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
@@ -867,7 +950,7 @@
               <span class="step-num">2</span>
               <span>Join an Existing Call</span>
             </div>
-            <p class="step-desc">Paste an invite link or room ID from your friend to connect directly.</p>
+            <p class="step-desc">Paste an invite link or room ID to join everyone in the room.</p>
             <input type="text" id="roomInput" class="room-input" placeholder="Paste invite link or room ID..." />
             <button class="btn btn-secondary" id="btnJoinRoom">Join Call</button>
           </div>
@@ -911,9 +994,10 @@
 
     // Application state
     let peer = null;
-    let activeCall = null;
-    let dataConn = null;
-    let remotePeerId = null;
+    let isHost = false;
+    let myDisplayName = "Guest " + Math.floor(100 + Math.random() * 900);
+    // Map<peerId, { id, name, dataConn, call, stream, tileEl, videoEl, labelEl, avatarEl }>
+    const peers = new Map();
     let localStream = null;
     let isMicMuted = false;
     let isCamOff = false;
@@ -925,7 +1009,7 @@
       statusDot: document.getElementById("statusDot"),
       statusText: document.getElementById("statusText"),
       toastContainer: document.getElementById("toastContainer"),
-      remoteVideo: document.getElementById("remoteVideo"),
+      videoGrid: document.getElementById("videoGrid"),
       remotePlaceholder: document.getElementById("remotePlaceholder"),
       localPip: document.getElementById("localPip"),
       localVideo: document.getElementById("localVideo"),
@@ -937,6 +1021,7 @@
       unreadBadge: document.getElementById("unreadBadge"),
       panelConnect: document.getElementById("panelConnect"),
       panelChat: document.getElementById("panelChat"),
+      displayNameInput: document.getElementById("displayNameInput"),
       chkEnableMedia: document.getElementById("chkEnableMedia"),
       inviteBanner: document.getElementById("inviteBanner"),
       inviteBannerText: document.getElementById("inviteBannerText"),
@@ -957,6 +1042,38 @@
     /* =========================================================================
        UI Helpers & Link Parsing
        ========================================================================= */
+
+    function getMyName() {
+      const val = el.displayNameInput.value.trim();
+      return val || myDisplayName;
+    }
+
+    function getInitials(name) {
+      const parts = (name || "?").trim().split(/\s+/);
+      if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+      return (parts[0].slice(0, 2) || "?").toUpperCase();
+    }
+
+    function updateRoomStatus() {
+      const count = peers.size;
+      const hasOpenData = Array.from(peers.values()).some((p) => p.dataConn && p.dataConn.open);
+      el.chatInput.disabled = !hasOpenData;
+      el.btnSendMsg.disabled = !hasOpenData;
+
+      if (count > 0) {
+        setStatus("connected", `Connected (${count + 1} in room)`);
+      } else if (peer && !peer.destroyed) {
+        setStatus("connecting", isHost ? "Waiting for Friends..." : "Connecting...");
+      } else {
+        setStatus("", "Not Connected");
+      }
+
+      // Update grid layout classes
+      el.videoGrid.classList.toggle("active", count > 0);
+      el.videoGrid.classList.toggle("count-1", count === 1);
+      el.videoGrid.classList.toggle("count-2", count === 2);
+      el.remotePlaceholder.style.display = count > 0 ? "none" : "block";
+    }
 
     function setStatus(type, text) {
       el.statusDot.className = "status-dot" + (type ? " " + type : "");
@@ -1097,91 +1214,207 @@
     }
 
     /* =========================================================================
-       PeerJS Media Call & Data Channel Handlers
+       PeerJS Group Mesh Management (Video Tiles, Calls & Data Channels)
        ========================================================================= */
 
-    function attachCallHandlers(call) {
-      if (activeCall && activeCall !== call) {
-        activeCall.close();
+    function getOrCreatePeerEntry(peerId, name) {
+      if (peers.has(peerId)) {
+        const existing = peers.get(peerId);
+        if (name && name !== existing.name) {
+          existing.name = name;
+          existing.labelEl.textContent = name;
+          existing.avatarEl.textContent = getInitials(name);
+        }
+        return existing;
       }
-      activeCall = call;
-      remotePeerId = call.peer;
+
+      const displayName = name || ("Peer " + peerId.slice(-4));
+      const tileEl = document.createElement("div");
+      tileEl.className = "video-tile";
+      tileEl.dataset.peerId = peerId;
+
+      const videoEl = document.createElement("video");
+      videoEl.autoplay = true;
+      videoEl.playsInline = true;
+      videoEl.setAttribute("webkit-playsinline", "");
+
+      const avatarEl = document.createElement("div");
+      avatarEl.className = "tile-avatar";
+      avatarEl.textContent = getInitials(displayName);
+
+      const labelEl = document.createElement("span");
+      labelEl.className = "tile-label";
+      labelEl.textContent = displayName;
+
+      tileEl.appendChild(videoEl);
+      tileEl.appendChild(avatarEl);
+      tileEl.appendChild(labelEl);
+      el.videoGrid.appendChild(tileEl);
+
+      const entry = {
+        id: peerId,
+        name: displayName,
+        dataConn: null,
+        call: null,
+        stream: null,
+        tileEl,
+        videoEl,
+        labelEl,
+        avatarEl
+      };
+      peers.set(peerId, entry);
+      updateRoomStatus();
+      return entry;
+    }
+
+    function removePeer(peerId) {
+      const entry = peers.get(peerId);
+      if (!entry) return;
+
+      if (entry.call) {
+        try { entry.call.close(); } catch {}
+      }
+      if (entry.dataConn) {
+        try { entry.dataConn.close(); } catch {}
+      }
+      if (entry.tileEl && entry.tileEl.parentNode) {
+        entry.tileEl.remove();
+      }
+      peers.delete(peerId);
+      appendSystemMessage(`${entry.name} left the room.`);
+      showToast(`${entry.name} left the call.`);
+      updateRoomStatus();
+    }
+
+    function attachCallHandlers(call) {
+      const peerId = call.peer;
+      const entry = getOrCreatePeerEntry(peerId);
+      if (entry.call && entry.call !== call) {
+        try { entry.call.close(); } catch {}
+      }
+      entry.call = call;
 
       call.on("stream", (remoteStream) => {
-        el.remoteVideo.srcObject = remoteStream;
-        el.remoteVideo.style.display = "block";
-        el.remotePlaceholder.style.display = "none";
-        el.remoteVideo.play().catch(() => {});
-        setStatus("connected", "Connected (P2P)");
+        entry.stream = remoteStream;
+        entry.videoEl.srcObject = remoteStream;
+        entry.tileEl.classList.add("has-video");
+        entry.videoEl.play().catch(() => {});
+        updateRoomStatus();
       });
 
       call.on("close", () => {
-        el.remoteVideo.srcObject = null;
-        el.remoteVideo.style.display = "none";
-        el.remotePlaceholder.style.display = "block";
+        if (entry.call === call) {
+          entry.call = null;
+          entry.stream = null;
+          entry.videoEl.srcObject = null;
+          entry.tileEl.classList.remove("has-video");
+        }
       });
 
       call.on("error", (err) => {
-        console.error("Call error:", err);
-        showToast("Video call interrupted.", "error");
+        console.error(`Call error with ${peerId}:`, err);
       });
     }
 
-    function attachDataHandlers(conn) {
-      if (dataConn && dataConn !== conn) {
-        dataConn.close();
+    function connectToPeer(targetId, targetName) {
+      if (!peer || peer.destroyed || targetId === peer.id) return;
+      const existing = peers.get(targetId);
+      if (existing && existing.dataConn && existing.dataConn.open) return;
+
+      getOrCreatePeerEntry(targetId, targetName);
+      const conn = peer.connect(targetId, { reliable: true });
+      attachDataHandlers(conn);
+
+      if (localStream) {
+        const call = peer.call(targetId, localStream);
+        if (call) attachCallHandlers(call);
       }
-      dataConn = conn;
-      remotePeerId = conn.peer;
+    }
+
+    function attachDataHandlers(conn) {
+      const peerId = conn.peer;
+      const entry = getOrCreatePeerEntry(peerId);
+      if (entry.dataConn && entry.dataConn !== conn) {
+        try { entry.dataConn.close(); } catch {}
+      }
+      entry.dataConn = conn;
 
       conn.on("open", () => {
-        el.chatInput.disabled = false;
-        el.btnSendMsg.disabled = false;
         el.btnHangup.disabled = false;
-        setStatus("connected", "Connected (P2P)");
-        showToast("Peer connected!", "success");
-        appendSystemMessage("Connected directly to peer.");
+        updateRoomStatus();
 
-        // If we joined in text-only mode, ask the peer to share their video if they have one
-        if (!localStream && !activeCall) {
-          conn.send({ type: "sys-request-stream" });
+        // Introduce ourselves to this peer
+        conn.send({
+          type: "hello",
+          name: getMyName(),
+          hasStream: !!localStream
+        });
+
+        // If we are the room Host, send the newcomer the list of all other peers in the room
+        if (isHost) {
+          const otherPeers = [];
+          peers.forEach((p, id) => {
+            if (id !== peerId && p.dataConn && p.dataConn.open) {
+              otherPeers.push({ id, name: p.name });
+            }
+          });
+          if (otherPeers.length > 0) {
+            conn.send({ type: "peer-list", peers: otherPeers });
+          }
         }
       });
 
       conn.on("data", (payload) => {
-        if (payload && typeof payload === "object") {
-          if (payload.type === "sys-request-stream") {
-            // Peer has no camera; send our camera stream to them if available
-            if (localStream && peer && remotePeerId) {
-              const call = peer.call(remotePeerId, localStream);
-              if (call) attachCallHandlers(call);
+        if (!payload || typeof payload !== "object") {
+          if (typeof payload === "string") receiveChatMessage(payload, entry.name);
+          return;
+        }
+
+        if (payload.type === "hello") {
+          const prevName = entry.name;
+          if (payload.name) {
+            getOrCreatePeerEntry(peerId, payload.name);
+          }
+          appendSystemMessage(`${entry.name} joined the room.`);
+          if (prevName !== entry.name || peers.size === 1) {
+            showToast(`${entry.name} joined!`, "success");
+          }
+          // If newcomer joined without a camera, send them our camera stream if we have one
+          if (!payload.hasStream && localStream && !entry.call && peer) {
+            const call = peer.call(peerId, localStream);
+            if (call) attachCallHandlers(call);
+          }
+          return;
+        }
+
+        if (payload.type === "peer-list" && Array.isArray(payload.peers)) {
+          // Connect directly to every other participant already in the room (mesh)
+          payload.peers.forEach((p) => {
+            if (p && p.id && p.id !== peer.id && !peers.has(p.id)) {
+              connectToPeer(p.id, p.name);
             }
-            return;
-          }
-          if (payload.type === "chat" && typeof payload.text === "string") {
-            receiveChatMessage(payload.text);
-            return;
-          }
-        } else if (typeof payload === "string") {
-          receiveChatMessage(payload);
+          });
+          return;
+        }
+
+        if (payload.type === "chat" && typeof payload.text === "string") {
+          receiveChatMessage(payload.text, payload.senderName || entry.name);
         }
       });
 
       conn.on("close", () => {
-        el.chatInput.disabled = true;
-        el.btnSendMsg.disabled = true;
-        setStatus("error", "Peer Disconnected");
-        appendSystemMessage("Peer disconnected.");
-        showToast("Peer left the call.");
+        if (peers.has(peerId)) {
+          removePeer(peerId);
+        }
       });
 
       conn.on("error", (err) => {
-        console.error("Data connection error:", err);
+        console.error(`Data connection error with ${peerId}:`, err);
       });
     }
 
-    function receiveChatMessage(text) {
-      appendChatMessage(text, "peer");
+    function receiveChatMessage(text, senderName) {
+      appendChatMessage(text, "peer", senderName);
       if (activeTab !== "chat") {
         unreadCount++;
         el.unreadBadge.textContent = unreadCount;
@@ -1189,10 +1422,19 @@
       }
     }
 
-    function appendChatMessage(text, sender) {
+    function appendChatMessage(text, sender, senderName = "") {
       const msgDiv = document.createElement("div");
       msgDiv.className = `msg ${sender}`;
-      msgDiv.textContent = text;
+
+      if (sender === "peer" && senderName) {
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "msg-sender";
+        nameSpan.textContent = senderName;
+        msgDiv.appendChild(nameSpan);
+      }
+
+      const textNode = document.createTextNode(text);
+      msgDiv.appendChild(textNode);
 
       const meta = document.createElement("span");
       meta.className = "msg-meta";
@@ -1271,6 +1513,7 @@
       el.btnCreateRoom.disabled = true;
       el.btnCreateRoom.textContent = "Creating link...";
       setStatus("connecting", "Creating Room...");
+      isHost = true;
 
       await initLocalMedia();
       const roomId = generateRoomId();
@@ -1278,6 +1521,7 @@
       if (!instance) {
         el.btnCreateRoom.disabled = false;
         el.btnCreateRoom.textContent = "Create Call Link";
+        isHost = false;
         return;
       }
 
@@ -1286,9 +1530,9 @@
         el.shareLinkOutput.value = inviteUrl;
         el.shareSection.classList.remove("hidden");
         el.btnHangup.disabled = false;
-        el.btnCreateRoom.textContent = "Link Ready (Waiting...)";
-        setStatus("connecting", "Waiting for Friend...");
-        showToast("Call link ready! Share it with your friend.", "success");
+        el.btnCreateRoom.textContent = "Room Active (Share Link)";
+        updateRoomStatus();
+        showToast("Group call link ready! Share it with your friends.", "success");
       });
     }
 
@@ -1304,6 +1548,7 @@
       el.btnJoinInvited.disabled = true;
       el.btnJoinInvited.textContent = "Connecting...";
       setStatus("connecting", "Joining Call...");
+      isHost = false;
 
       await initLocalMedia();
       const instance = initPeerInstance();
@@ -1318,16 +1563,8 @@
       instance.on("open", () => {
         el.btnHangup.disabled = false;
         el.inviteBanner.classList.add("hidden");
-
-        // Open P2P text chat channel
-        const conn = instance.connect(targetRoomId, { reliable: true });
-        attachDataHandlers(conn);
-
-        // Start P2P video/audio call if local camera/mic is available
-        if (localStream) {
-          const call = instance.call(targetRoomId, localStream);
-          if (call) attachCallHandlers(call);
-        }
+        // Connect to the Host; the Host will send back the list of other participants
+        connectToPeer(targetRoomId, "Host");
       });
     }
 
@@ -1383,10 +1620,12 @@
         const stream = await initLocalMedia(true);
         if (stream) {
           showToast("Camera turned on!", "success");
-          // If already connected in text-only mode, upgrade to video call immediately
-          if (peer && remotePeerId) {
-            const call = peer.call(remotePeerId, stream);
-            if (call) attachCallHandlers(call);
+          // Upgrade all active text-only peer connections to video
+          if (peer && !peer.destroyed) {
+            peers.forEach((entry, peerId) => {
+              const call = peer.call(peerId, stream);
+              if (call) attachCallHandlers(call);
+            });
           }
         }
         return;
@@ -1398,14 +1637,13 @@
     });
 
     el.btnHangup.addEventListener("click", () => {
-      if (activeCall) {
-        activeCall.close();
-        activeCall = null;
-      }
-      if (dataConn) {
-        dataConn.close();
-        dataConn = null;
-      }
+      peers.forEach((entry) => {
+        if (entry.call) { try { entry.call.close(); } catch {} }
+        if (entry.dataConn) { try { entry.dataConn.close(); } catch {} }
+        if (entry.tileEl && entry.tileEl.parentNode) entry.tileEl.remove();
+      });
+      peers.clear();
+
       if (peer) {
         peer.destroy();
         peer = null;
@@ -1414,12 +1652,9 @@
         localStream.getTracks().forEach((t) => t.stop());
         localStream = null;
       }
-      remotePeerId = null;
+      isHost = false;
 
       // Reset UI
-      el.remoteVideo.srcObject = null;
-      el.remoteVideo.style.display = "none";
-      el.remotePlaceholder.style.display = "block";
       el.localVideo.srcObject = null;
       el.localPip.style.display = "none";
 
@@ -1439,7 +1674,7 @@
       el.btnJoinInvited.disabled = false;
       el.btnJoinInvited.textContent = "Join Call Now";
 
-      setStatus("", "Not Connected");
+      updateRoomStatus();
       showToast("Call ended.");
     });
 
@@ -1450,14 +1685,26 @@
     el.chatForm.addEventListener("submit", (e) => {
       e.preventDefault();
       const text = el.chatInput.value.trim();
-      if (!text || !dataConn || !dataConn.open) return;
+      if (!text) return;
 
-      try {
-        dataConn.send({ type: "chat", text });
+      const senderName = getMyName();
+      let sentCount = 0;
+      peers.forEach((entry) => {
+        if (entry.dataConn && entry.dataConn.open) {
+          try {
+            entry.dataConn.send({ type: "chat", text, senderName });
+            sentCount++;
+          } catch (err) {
+            console.error(`Failed to send message to ${entry.id}:`, err);
+          }
+        }
+      });
+
+      if (sentCount > 0) {
         appendChatMessage(text, "me");
         el.chatInput.value = "";
-      } catch (err) {
-        showToast("Could not send message.", "error");
+      } else {
+        showToast("No connected peers to receive your message.", "error");
       }
     });
 
